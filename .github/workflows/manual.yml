@@ -3,7 +3,7 @@ name: Generate Script Manifest
 on:
   push:
     paths:
-      - 'Scripts/**/**/*.ps1'
+      - 'Scripts/**/*.ps1'
       - '.github/workflows/build-manifest.yml'
     branches: [ main ]
 
