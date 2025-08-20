@@ -20,7 +20,10 @@ jobs:
         mkdir -p tmp
         jq -n '[]' > tmp/manifest.json
 
-        for f in Scripts/*/*.ps1; do
+        shopt -s globstar nullglob
+        for f in Scripts/**/*.ps1; do
+        # same logic to extract name/hash/url here
+        done
           [ -f "$f" ] || continue
 
           name=$(basename "$f" .ps1)
