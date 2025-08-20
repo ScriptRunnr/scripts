@@ -42,7 +42,11 @@ jobs:
         done
 
         mv tmp/manifest.json manifest.json
+    - name: Pull latest changes from main
+      run: git pull origin main --rebase
 
+    - name: Push changes
+      run: git push origin main
     - name: Commit and push if changed
       run: |
         git config user.name "github-actions"
