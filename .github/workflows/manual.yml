@@ -42,6 +42,9 @@ jobs:
         done
 
         mv tmp/manifest.json manifest.json
+    - name: Merge latest changes
+      run: | 
+        git pull origin main   
     - name: Pull latest changes from main
       run: git pull origin main --rebase
 
