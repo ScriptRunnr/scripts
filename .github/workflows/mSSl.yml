@@ -1,34 +1,56 @@
-name: Update Script Manifest
+name: Update Manifest JSON from Scripts
 
 on:
-  workflow_dispatch: # or use "push", "schedule", etc.
+  workflow_dispatch:
 
 jobs:
-  update:
+  update-manifest:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo with full history
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for rebase to work
+          fetch-depth: 0
 
-      - name: Setup Git user
+      - name: Set up Git identity
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Make changes (e.g., update manifest.json)
+      - name: Generate manifest.json from scripts
         run: |
-          echo "🔧 Pretend we're modifying manifest.json..."
-          echo "// updated at $(date -u)" >> manifest.json
+          echo "[" > manifest.json
+
+          FIRST=true
+          for f in scripts/*.ps1; do
+            [ -e "$f" ] || continue
+
+            NAME=$(basename "$f")
+            HASH=$(sha256sum "$f" | awk '{print $1}')
+
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              echo "," >> manifest.json
+            fi
+
+            echo "  {" >> manifest.json
+            echo "    \"name\": \"$NAME\"," >> manifest.json
+            echo "    \"path\": \"$f\"," >> manifest.json
+            echo "    \"sha256\": \"$HASH\"" >> manifest.json
+            echo "  }" >> manifest.json
+          done
+
+          echo "]" >> manifest.json
+
+      - name: Stage and commit changes if any
+        run: |
           git add manifest.json
-          git commit -m "Update manifest.json" || echo "No changes to commit"
+          git diff --staged --quiet || git commit -m "Update manifest.json from scripts"
 
-      - name: Pull with rebase to avoid non-fast-forward error
-        run: |
-          git pull --rebase
+      - name: Pull latest changes with rebase
+        run: git pull --rebase
 
-      - name: Push changes back to GitHub
-        run: |
-          git push
+      - name: Push changes
+        run: git push
