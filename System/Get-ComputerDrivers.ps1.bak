@@ -1,6 +1,0 @@
-param(
-    [string]$ComputerName,
-    [string]$Class
-)
-
-get-wmiobject -class $class -computername $computername
