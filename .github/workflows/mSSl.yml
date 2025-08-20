@@ -1,0 +1,34 @@
+name: Update Script Manifest
+
+on:
+  workflow_dispatch: # or use "push", "schedule", etc.
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for rebase to work
+
+      - name: Setup Git user
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Make changes (e.g., update manifest.json)
+        run: |
+          echo "🔧 Pretend we're modifying manifest.json..."
+          echo "// updated at $(date -u)" >> manifest.json
+          git add manifest.json
+          git commit -m "Update manifest.json" || echo "No changes to commit"
+
+      - name: Pull with rebase to avoid non-fast-forward error
+        run: |
+          git pull --rebase
+
+      - name: Push changes back to GitHub
+        run: |
+          git push
