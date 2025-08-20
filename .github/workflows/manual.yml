@@ -1,0 +1,53 @@
+name: Generate Script Manifest
+
+on:
+  push:
+    paths:
+      - 'Scripts/**/**/*.ps1'
+      - '.github/workflows/build-manifest.yml'
+    branches: [ main ]
+
+jobs:
+  build-manifest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Generate manifest.json
+      run: |
+        mkdir -p tmp
+        jq -n '[]' > tmp/manifest.json
+
+        for f in Scripts/*/*.ps1; do
+          [ -f "$f" ] || continue
+
+          name=$(basename "$f" .ps1)
+          version="1.0"  # Optional: extract from filename if desired
+          raw_url="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/$f"
+          hash=$(openssl dgst -sha256 -binary "$f" | xxd -p -c 256)
+
+          jq \
+            --arg id "$hash" \
+            --arg name "$name" \
+            --arg version "$version" \
+            --arg hash "$hash" \
+            --arg url "$raw_url" \
+            '. += [{"scriptId": $id, "name": $name, "version": $version, "hash": $hash, "url": $url}]' \
+            tmp/manifest.json > tmp/tmp.json && mv tmp/tmp.json tmp/manifest.json
+        done
+
+        mv tmp/manifest.json manifest.json
+
+    - name: Commit and push if changed
+      run: |
+        git config user.name "github-actions"
+        git config user.email "actions@github.com"
+        git add manifest.json
+        if ! git diff --quiet --cached; then
+          git commit -m "Update manifest.json"
+          git push
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
